@@ -7,7 +7,7 @@ export const setGenreList = (list) => ({
 });
 
 export const setActiveGenre = (id, name) => {
-  
+
   return function (dispatch) {
     dispatch(setLog(`Set Genre to: ${name}`))
     dispatch({
