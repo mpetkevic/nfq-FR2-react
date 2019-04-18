@@ -1,59 +1,23 @@
 import React from 'react';
 import Card from './Card';
-import axios from 'axios';
-import { endpoints, getImageUrl } from '../../config';
+import { getImageUrl } from '../../config';
+import { connect } from 'react-redux';
+import { getMovieList } from '../thunks/getMovieList';
+import { getGenreList } from '../thunks/getGenreList';
+import { setActiveGenre } from '../actions/genresAction';
+import { setLike, unsetLike } from '../actions/moviesActions';
 
 class App extends React.Component {
-  state = {
-    movieList: [],
-    genreList: [],
-    activeGenre: null,
-  }
-
   componentDidMount() {
-    this.getGenres();
-    this.getMovies();
+    this.props.onGetMovieList()
+    this.props.onGetGenresList()
   }
 
-  getMovies = () => {
-    axios
-      .get(endpoints.mostPopularMovies())
-      .then((res) => this.setMovieList(res.data.results))
-      .catch((error) => console.log(error));
-  };
-
-  getGenres = () => {
-    axios
-      .get(endpoints.genres())
-      .then((res) => this.setGenreList(res.data.genres))
-      .catch((error) => console.log(error));
-  }
-
-  genresFilter = (id) => this.setState({activeGenre: id})
-  
-  setMovieList = (list) => {
-    const movieList = list.map(movie => ({...movie, liked: false}));
-    this.setState({movieList})
-  };
-
-  setGenreList = (list) => this.setState({genreList: list});
-
-  displayAll = () => this.setState({activeGenre: null});
-
-  toggleClass = (id) => {
-    const movieList = this.state.movieList.map(movie => {
-      if(movie.id === id) {
-        return {...movie, liked: !movie.liked}
-      } else {
-        return movie
-      }
-    })
-    this.setState({movieList});
-  }
 
   render() {
-    const { movieList, genreList, activeGenre } = this.state;
-    const filteredMovieList = activeGenre !== null ?
+    const { movieList, hearted, genreList, activeGenre, onSetActiveGenre, onSetLike, onUnsetLike, logs } = this.props;
+    console.log(logs)
+    const movies = activeGenre !== null ?
       movieList.filter(movie => {
         if(movie.genre_ids.includes(activeGenre)){
           return movie;
@@ -64,12 +28,12 @@ class App extends React.Component {
           id={listItem.id}
           backgroundImage={getImageUrl(listItem.backdrop_path)}
           title={listItem.original_title}
-          liked={listItem.liked}
           releaseDate={listItem.release_date}
           score={listItem.vote_average}
           votes={listItem.vote_count}
           description={listItem.overview}
-          toggleClass={this.toggleClass}
+          onLike={hearted.includes(listItem.id) ? onUnsetLike : onSetLike}
+          hearted={hearted.includes(listItem.id)}
         />
       )) : movieList.map(listItem => (
         <Card
@@ -77,32 +41,52 @@ class App extends React.Component {
           id={listItem.id}
           backgroundImage={getImageUrl(listItem.backdrop_path)}
           title={listItem.original_title}
-          liked={listItem.liked}
           releaseDate={listItem.release_date}
           score={listItem.vote_average}
           votes={listItem.vote_count}
           description={listItem.overview}
-          toggleClass={this.toggleClass}
+          onLike={hearted.includes(listItem.id) ? onUnsetLike : onSetLike}
+          hearted={hearted.includes(listItem.id)}
         />
       ))
 
+    const genres = genreList.map(genre => {
+      return <span
+        key={genre.id}
+        className='genre'
+        onClick={() => onSetActiveGenre(genre.id, genre.name)}
+      >{genre.name}</span>
+    })
     return (
       <div>
-        {genreList.map((genre, i) => (
-          <span
-            key={genre.id}
-            className='genre'
-            onClick={() =>this.genresFilter(genre.id)}
-          >{genre.name}</span>
-        ))}
+        {genres}
         <span
           className='genre'
-          onClick={this.displayAll}
-        >ALL</span>
-        {filteredMovieList}
+          onClick={() => onSetActiveGenre(null, 'All')}
+        >All</span>
+        {movies}
       </div>
     );
   }
 }
 
-export default App;
+const mapStateToProps = (state) => ({
+  movieList: state.movies.list,
+  hearted: state.movies.hearted,
+  genreList: state.genres.list,
+  activeGenre: state.genres.activeGenre,
+  logs: state.logs.logs
+});
+
+const mapDispatchToProps = (dispatch) => ({
+  onGetMovieList: () => dispatch(getMovieList()),
+  onGetGenresList: () => dispatch(getGenreList()),
+  onSetActiveGenre: (id, name) => dispatch(setActiveGenre(id, name)),
+  onSetLike: (id,title) => dispatch(setLike(id,title)),
+  onUnsetLike: (id,title) => dispatch(unsetLike(id,title))
+});
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(App);

@@ -7,13 +7,15 @@ class Card extends React.Component {
   
   render() {
     const {
+      id,
       backgroundImage,
       title,
       releaseDate,
       score,
       votes,
       description,
-      liked
+      onLike,
+      hearted
     } = this.props;
     const { opened } = this.state;
     return (
@@ -31,9 +33,9 @@ class Card extends React.Component {
     
         <div
           className="card__like"
-          onClick={() => this.props.toggleClass(this.props.id)}
+          onClick={()=>onLike(id, title)}
         >
-            <i className={`fa ${liked ? 'fa-heart' : 'fa-heart-o'}`} />
+            <i className={`fa ${hearted ? 'fa-heart' : 'fa-heart-o'}`} />
         </div>
     
         <div className="card__subtitle">
